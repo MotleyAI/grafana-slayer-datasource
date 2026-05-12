@@ -1,0 +1,28 @@
+{
+  "$schema": "https://raw.githubusercontent.com/grafana/grafana/main/docs/sources/developers/plugins/plugin.schema.json",
+  "type": "datasource",
+  "name": "SLayer",
+  "id": "motley-slayer-datasource",
+  "metrics": true,
+  "backend": true,
+  "executable": "gpx_slayer",
+  "info": {
+    "description": "Query SLayer (Motley's semantic layer) from Grafana.",
+    "author": {
+      "name": "MotleyAI"
+    },
+    "keywords": ["datasource"],
+    "logos": {
+      "small": "img/logo.svg",
+      "large": "img/logo.svg"
+    },
+    "links": [],
+    "screenshots": [],
+    "version": "%VERSION%",
+    "updated": "%TODAY%"
+  },
+  "dependencies": {
+    "grafanaDependency": ">=11.0.0",
+    "plugins": []
+  }
+}
