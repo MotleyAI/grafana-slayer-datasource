@@ -1,0 +1,39 @@
+services:
+  grafana:
+    extends:
+      file: .config/docker-compose-base.yaml
+      service: grafana
+    depends_on:
+      slayer:
+        condition: service_healthy
+
+  slayer:
+    image: python:3.11-slim
+    container_name: slayer
+    ports:
+      - '5143:5143'
+    # pip-install the published motley-slayer package on each up; not the most
+    # efficient (cold ~45-60s), but avoids maintaining a custom Dockerfile.
+    # Optimization candidate: bake into an image once the API stabilizes.
+    command:
+      - bash
+      - -c
+      - |
+        set -e
+        pip install --quiet --root-user-action=ignore 'motley-slayer'
+        exec slayer serve --demo --host 0.0.0.0
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:5143/health').status==200 else 1)"
+      interval: 5s
+      timeout: 3s
+      retries: 60
+      start_period: 120s
+    volumes:
+      - slayer-pip-cache:/root/.cache/pip
+
+volumes:
+  slayer-pip-cache:
