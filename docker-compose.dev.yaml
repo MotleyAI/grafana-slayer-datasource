@@ -1,0 +1,23 @@
+# Plugin development setup: builds the Grafana dev container from
+# .config/Dockerfile (delve, supervisord, mage watch, webpack watch) so Go and
+# TS edits in this checkout rebuild + reattach automatically.
+#
+# Use `pnpm server` (which wraps `docker compose -f docker-compose.dev.yaml up
+# --build`). The slayer service is reused as-is from docker-compose.yaml.
+#
+# For end-user demos (stock Grafana, lighter image, no dev tooling), use the
+# plain `docker compose up` against docker-compose.yaml.
+
+services:
+  grafana:
+    extends:
+      file: .config/docker-compose-base.yaml
+      service: grafana
+    depends_on:
+      slayer:
+        condition: service_healthy
+
+  slayer:
+    extends:
+      file: docker-compose.yaml
+      service: slayer

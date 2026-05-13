@@ -93,6 +93,134 @@ func TestClient_Query_ErrorStatus(t *testing.T) {
 	}
 }
 
+func TestBuildQueryBody_SingleObject_WhenNoSourceQueries(t *testing.T) {
+	q := Query{
+		SourceModel: "orders",
+		Measures:    []map[string]interface{}{{"formula": "*:count"}},
+	}
+	body, err := buildQueryBody(q)
+	if err != nil {
+		t.Fatalf("buildQueryBody: %v", err)
+	}
+	// Wire shape: a JSON object, not an array.
+	var asObj map[string]interface{}
+	if err := json.Unmarshal(body, &asObj); err != nil {
+		t.Fatalf("expected an object payload, got: %s", string(body))
+	}
+	if asObj["source_model"] != "orders" {
+		t.Errorf("source_model = %v", asObj["source_model"])
+	}
+	if _, hasSQ := asObj["source_queries"]; hasSQ {
+		t.Errorf("source_queries should be omitted: %s", string(body))
+	}
+}
+
+func TestBuildQueryBody_ListShape_WhenSourceQueriesSet(t *testing.T) {
+	// SLayer ≥0.6.7 accepts Union[QueryRequest, QueryListRequest]. When the
+	// plugin's frontend supplies source_queries, we marshal as the
+	// QueryListRequest wrapper: {queries: [stage_1, …, outer_minus_source_queries]}.
+	q := Query{
+		SourceModel: "enriched",
+		Measures:    []map[string]interface{}{{"formula": "active_customers:sum", "name": "active"}},
+		Dimensions:  []map[string]interface{}{{"name": "cohort_month"}, {"name": "period_months"}},
+		Filters:     []string{"period_months <= 12"},
+		SourceQueries: json.RawMessage(`[
+			{"name": "customer_first", "source_model": "orders",
+			 "dimensions": [{"name": "customer_id"}],
+			 "measures": [{"formula": "ordered_at:min", "name": "cohort_first"}]},
+			{"name": "enriched", "source_model": "customer_first",
+			 "dimensions": [{"name": "cohort_month"}, {"name": "period_months"}],
+			 "measures": [{"formula": "customer_id:count_distinct", "name": "active_customers"}]}
+		]`),
+	}
+	body, err := buildQueryBody(q)
+	if err != nil {
+		t.Fatalf("buildQueryBody: %v", err)
+	}
+	var wrapper struct {
+		Queries []map[string]interface{} `json:"queries"`
+	}
+	if err := json.Unmarshal(body, &wrapper); err != nil {
+		t.Fatalf("expected {queries: [...]} wrapper, got %s", string(body))
+	}
+	list := wrapper.Queries
+	if len(list) != 3 {
+		t.Fatalf("list length = %d, want 3 (2 stages + outer)", len(list))
+	}
+	if list[0]["name"] != "customer_first" {
+		t.Errorf("first stage name = %v", list[0]["name"])
+	}
+	if list[1]["name"] != "enriched" {
+		t.Errorf("second stage name = %v", list[1]["name"])
+	}
+	outer := list[2]
+	if outer["source_model"] != "enriched" {
+		t.Errorf("outer source_model = %v", outer["source_model"])
+	}
+	if _, hasSQ := outer["source_queries"]; hasSQ {
+		t.Errorf("outer query should not carry source_queries: %v", outer)
+	}
+	if outer["filters"] == nil {
+		t.Errorf("outer query lost its filters: %v", outer)
+	}
+}
+
+func TestBuildQueryBody_InvalidSourceQueriesJSON(t *testing.T) {
+	q := Query{
+		SourceModel:   "x",
+		SourceQueries: json.RawMessage(`not json`),
+	}
+	if _, err := buildQueryBody(q); err == nil {
+		t.Fatal("expected error on malformed source_queries, got nil")
+	}
+}
+
+func TestClient_Query_SendsListShape_WhenSourceQueriesSet(t *testing.T) {
+	// End-to-end: confirm the HTTP body is a {queries: [...]} wrapper when
+	// SourceQueries is supplied — that's the QueryListRequest shape SLayer's
+	// 0.6.7 REST dispatcher accepts.
+	var captured []byte
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		captured, _ = io.ReadAll(r.Body)
+		_, _ = w.Write([]byte(`{"data":[],"row_count":0,"columns":[]}`))
+	}))
+	defer srv.Close()
+
+	_, err := NewClient(srv.URL, "").Query(context.Background(), Query{
+		SourceModel:   "enriched",
+		SourceQueries: json.RawMessage(`[{"name":"customer_first","source_model":"orders"}]`),
+	})
+	if err != nil {
+		t.Fatalf("Query: %v", err)
+	}
+	var got map[string]interface{}
+	if err := json.Unmarshal(captured, &got); err != nil {
+		t.Fatalf("expected JSON object on the wire, got: %s", string(captured))
+	}
+	queries, ok := got["queries"].([]interface{})
+	if !ok || len(queries) != 2 {
+		t.Errorf("expected wrapper {queries: [stages..., outer]}, got: %s", string(captured))
+	}
+}
+
+func TestClient_Models(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/models" {
+			http.Error(w, "nope", http.StatusNotFound)
+			return
+		}
+		_, _ = w.Write([]byte(`[{"name":"orders","data_source":"jaffle_shop"},{"name":"customers","data_source":"jaffle_shop"}]`))
+	}))
+	defer srv.Close()
+	got, err := NewClient(srv.URL, "").Models(context.Background())
+	if err != nil {
+		t.Fatalf("Models: %v", err)
+	}
+	if len(got) != 2 || got[0].Name != "orders" || got[1].DataSource != "jaffle_shop" {
+		t.Errorf("unexpected: %+v", got)
+	}
+}
+
 func TestClient_Health(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/health" {

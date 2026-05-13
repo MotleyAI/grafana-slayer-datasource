@@ -1,136 +1,118 @@
-# Grafana data source plugin template
+<p align="center">
+  <img src="src/img/logo.svg" alt="SLayer" width="120">
+</p>
 
-This template is a starting point for building a Data Source Plugin for Grafana.
+<h1 align="center">SLayer for Grafana</h1>
 
-## What are Grafana data source plugins?
+<p align="center">
+  <strong>Grafana data source plugin for <a href="https://github.com/MotleyAI/slayer">SLayer</a></strong> — Motley's open-source, agent-first semantic layer.
+</p>
 
-Grafana supports a wide range of data sources, including Prometheus, MySQL, and even Datadog. There’s a good chance you can already visualize metrics from the systems you have set up. In some cases, though, you already have an in-house metrics solution that you’d like to add to your Grafana dashboards. Grafana Data Source Plugins enables integrating such solutions with Grafana.
+<p align="center">
+  Build dashboards over the same structured query DSL your AI agents use over MCP, against any of <a href="https://motley-slayer.readthedocs.io/en/latest/configuration/datasources/#supported-database-types">SLayer's supported databases</a> — Postgres, MySQL, ClickHouse, Snowflake, BigQuery, DuckDB, SQLite, and more.
+</p>
 
-## Getting started
+> **Status: beta.** PRs and issues welcome.
 
-### Backend
+<p align="center">
+  <img src="docs/images/dashboard-overview.jpg" alt="SLayer for Grafana — demo dashboard on Jaffle Shop data, with cohort retention, store leaderboard, daily revenue and KPIs" width="900">
+</p>
 
-1. Update [Grafana plugin SDK for Go](https://grafana.com/developers/plugin-tools/key-concepts/backend-plugins/grafana-plugin-sdk-for-go) dependency to the latest minor version:
+## Try it in 30 seconds
 
-   ```bash
-   go get -u github.com/grafana/grafana-plugin-sdk-go
-   go mod tidy
-   ```
+The only thing you need on your machine is **Docker Compose**:
 
-2. Build plugin backend binaries for Linux, Windows and Darwin:
+```bash
+git clone https://github.com/MotleyAI/grafana-slayer-datasource
+cd grafana-slayer-datasource
+docker compose up
+```
 
-   ```bash
-   mage -v
-   ```
+Open <http://localhost:3000/d/slayer-jaffle-demo/>: **Dashboards → SLayer → Jaffle Shop**. Everything builds inside Docker — no Node, Go, or Python on your host. First run takes ~5 minutes (frontend + backend + Grafana, hermetic multi-stage build); subsequent boots take seconds. A local SLayer instance with the bundled Jaffle Shop demo data on DuckDB comes up alongside Grafana.
 
-3. List all available Mage targets for additional commands:
+## What is SLayer?
 
-   ```bash
-   mage -l
-   ```
+SLayer sits between your database and your AI agents (and dashboards, scripts, internal tools). Instead of writing raw SQL, you describe *what* you want — measures, dimensions, filters — and SLayer compiles it to the right SQL dialect, handling joins, time arithmetic, and per-engine quirks.
 
-### Frontend
+A query like
 
-1. Install dependencies
+```json
+{
+  "source_model": "orders",
+  "measures": ["cumsum(revenue:sum)", "change_pct(revenue:sum)"],
+  "time_dimensions": [{"dimension": "ordered_at", "granularity": "month"}]
+}
+```
 
-   ```bash
-   pnpm install
-   ```
+produces *"month-on-month % change in cumulative revenue"* — no one writes window functions. SLayer's DSL [supports](https://motley-slayer.readthedocs.io/en/latest/concepts/queries/) measure formulas, time shifts, joined dimensions, multi-stage queries, queries-as-models, and a lot more.
 
-2. Build plugin in development mode and run in watch mode
+### What SLayer brings to the table
 
-   ```bash
-   pnpm run dev
-   ```
+- **Auto-ingestion of your schema** — introspects tables and foreign keys, generates models with explicit join metadata.
+- **Query-time aggregations** — pick `:sum` / `:avg` / `:count_distinct` per query, not at model definition time.
+- **Composable transforms** — `cumsum`, `time_shift`, `change_pct`, `lag`, `lead`, `rank`, `percentile`, more.
+- **Dialect-aware compilation** — same query, correct SQL for every backend.
+- **Saved memories** — agents and humans can record natural-language notes tied to specific entities; SLayer surfaces them on future queries.
+- **Schema-drift detection** — when the live database diverges from a saved model, SLayer flags it instead of generating broken SQL.
 
-3. Build plugin in production mode
+### Three surfaces, one DSL
 
-   ```bash
-   pnpm run build
-   ```
+| Consumer | Surface | What it does |
+|---|---|---|
+| **Humans** | This Grafana plugin | Builds dashboards on SLayer models — query editor with form + JSON modes |
+| **AI agents** 🤖 | [SLayer's MCP server](https://github.com/MotleyAI/slayer?tab=readme-ov-file#mcp-server) | Tools to introspect models, run queries, save memories, ingest new datasources |
+| **Code** | [REST](https://github.com/MotleyAI/slayer?tab=readme-ov-file#rest-api), [Python](https://github.com/MotleyAI/slayer?tab=readme-ov-file#python-client), [CLI](https://github.com/MotleyAI/slayer?tab=readme-ov-file#cli) | Same models, same DSL, embeddable as a Python library or run as a server |
 
-4. Run the tests (using Jest)
+That's the central thesis: model your data once, query it from anywhere using the same vocabulary. No more "SQL written by humans" vs "SQL written by agents" divergence.
 
-   ```bash
-   # Runs the tests and watches for changes, requires git init first
-   pnpm run test
+## Attach your AI agent
 
-   # Exits after running all the tests
-   pnpm run test:ci
-   ```
+SLayer ships an MCP server (HTTP/SSE and stdio) exposed alongside its REST API. Point Claude Code at the running demo:
 
-5. Spin up a Grafana instance and run the plugin inside it (using Docker)
+```bash
+claude mcp add slayer --transport sse --url http://localhost:5143/mcp/sse
+```
 
-   ```bash
-   pnpm run server
-   ```
+Now your agent has tools to introspect models, run queries, save and recall memories, and create new datasources — all on the same data your Grafana dashboard sees. See [SLayer's MCP docs](https://motley-slayer.readthedocs.io/en/latest/reference/mcp/).
 
-6. Run the E2E tests (using Playwright)
+> 🗺️ **Roadmap: plugin-hosted MCP for dashboard authoring.** A future MCP surface will let agents *create Grafana panels and dashboards* from natural-language prompts — e.g. *"show me revenue per store as a bar chart over the last quarter."* Open an issue if you want to help shape it.
 
-   ```bash
-   # Spins up a Grafana instance first that we tests against
-   pnpm run server
+## How the plugin works
 
-   # If you wish to start a certain Grafana version. If not specified will use latest by default
-   GRAFANA_VERSION=11.3.0 pnpm run server
+The Go backend is a thin proxy: it forwards your panel's query payload to SLayer's `POST /query`, converts the response into a Grafana data frame, sends it back. Your data never lands in the plugin's storage — SLayer talks to your DB directly.
 
-   # Starts the tests
-   pnpm run e2e
-   ```
+A single Grafana data source instance points at a single SLayer instance; SLayer's internal datasource selection (which Postgres? which ClickHouse?) is per-query, exposed in the query editor.
 
-7. Run the linter
+Three quality-of-life features the plugin adds on top of the raw REST call:
 
-   ```bash
-   pnpm run lint
+- **Time-range auto-injection**. Grafana's dashboard time range is auto-populated as `{__from}`, `{__to}`, `{__from_ms}`, `{__to_ms}`, `{__interval_ms}` variables on every query — you can reference them directly in filters (`ordered_at >= '{__from}'`). If your query declares a `time_dimension` and no filter mentions the macros, a default time filter is auto-added.
+- **Template variables**. Dashboard dropdown variables can be populated from a SlayerQuery: write the JSON in the variable definition (e.g. `{"source_model":"orders","dimensions":[{"name":"store_id"}]}`) and the plugin's `metricFindQuery` projects the first column into dropdown options.
+- **Form + JSON query editor**. Common queries are built with a form (model, measures, dimensions, time dim + granularity, filters); the "JSON" toggle lets power users drop into the raw `SlayerQuery` for the full DSL.
 
-   # or
+<p align="center">
+  <img src="docs/images/query-editor.jpg" alt="SLayer query editor in a Grafana panel — model, measures, dimensions, time dimension + granularity, filters, limit" width="800">
+</p>
 
-   pnpm run lint:fix
-   ```
+### Multi-stage queries, one panel
 
-# Distributing your plugin
+Cohort analysis, period-over-period comparisons, queries-as-models — anything that needs an intermediate aggregation to feed a final one — is a first-class shape in the SLayer DSL. The plugin's editor exposes the full DAG inline: a form for the outer query plus a collapsible list of named sub-queries, each editable with the same controls (no JSON wrangling required).
 
-When distributing a Grafana plugin either within the community or privately the plugin must be signed so the Grafana application can verify its authenticity. This can be done with the `@grafana/sign-plugin` package.
+The cohort retention table in the demo dashboard is built this way — one sub-query derives each customer's first-order month, another joins orders back and computes the month-since-cohort offset, the outer query counts active customers per `(cohort, period)`. Three composable SlayerQuery stages, one panel, the same DSL your AI agents use over MCP.
 
-_Note: It's not necessary to sign a plugin during development. The docker development environment that is scaffolded with `@grafana/create-plugin` caters for running the plugin without a signature._
+<p align="center">
+  <img src="docs/images/cohort-editor.jpg" alt="Multi-stage query editor showing the cohort retention setup — outer aggregate plus two named sub-queries (customer_first, enriched) editable inline" width="800">
+</p>
 
-## Initial steps
+## Use it with your own database
 
-Before signing a plugin please read the Grafana [plugin publishing and signing criteria](https://grafana.com/legal/plugins/#plugin-publishing-and-signing-criteria) documentation carefully.
+1. **Run SLayer** pointed at your database — `pip install motley-slayer && slayer serve`, then [add a data source](https://github.com/MotleyAI/slayer?tab=readme-ov-file#datasource-setup) and [ingest models](https://github.com/MotleyAI/slayer?tab=readme-ov-file#auto-ingestion). Or use the MCP tools to have your agent do it for you.
+2. **Add a SLayer data source** in Grafana — paste the URL (e.g. `http://localhost:5143`). The "Save & test" button calls SLayer's `/health` to verify connectivity.
+3. **Build dashboards.** Model names autocomplete from `GET /models`; the query editor handles measures, dimensions, time dimensions with granularity, and filters; advanced users drop into JSON for the full DSL.
 
-`@grafana/create-plugin` has added the necessary commands and workflows to make signing and distributing a plugin via the grafana plugins catalog as straightforward as possible.
+## Development & contributing
 
-Before signing a plugin for the first time please consult the Grafana [plugin signature levels](https://grafana.com/legal/plugins/#what-are-the-different-classifications-of-plugins) documentation to understand the differences between the types of signature level.
+Tooling, build, test, dev-container, roadmap — see [CONTRIBUTING.md](./CONTRIBUTING.md).
 
-1. Create a [Grafana Cloud account](https://grafana.com/signup).
-2. Make sure that the first part of the plugin ID matches the slug of your Grafana Cloud account.
-   - _You can find the plugin ID in the `plugin.json` file inside your plugin directory. For example, if your account slug is `acmecorp`, you need to prefix the plugin ID with `acmecorp-`._
-3. Create a Grafana Cloud API key with the `PluginPublisher` role.
-4. Keep a record of this API key as it will be required for signing a plugin
+## License & links
 
-## Signing a plugin
-
-### Using Github actions release workflow
-
-If the plugin is using the github actions supplied with `@grafana/create-plugin` signing a plugin is included out of the box. The [release workflow](./.github/workflows/release.yml) can prepare everything to make submitting your plugin to Grafana as easy as possible. Before being able to sign the plugin however a secret needs adding to the Github repository.
-
-1. Please navigate to "settings > secrets > actions" within your repo to create secrets.
-2. Click "New repository secret"
-3. Name the secret "GRAFANA_API_KEY"
-4. Paste your Grafana Cloud API key in the Secret field
-5. Click "Add secret"
-
-#### Push a version tag
-
-To trigger the workflow we need to push a version tag to github. This can be achieved with the following steps:
-
-1. Run `npm version <major|minor|patch>`
-2. Run `git push origin main --follow-tags`
-
-## Learn more
-
-Below you can find source code for existing app plugins and other related documentation.
-
-- [Basic data source plugin example](https://github.com/grafana/grafana-plugin-examples/tree/master/examples/datasource-basic#readme)
-- [`plugin.json` documentation](https://grafana.com/developers/plugin-tools/reference/plugin-json)
-- [How to sign a plugin?](https://grafana.com/developers/plugin-tools/publish-a-plugin/sign-a-plugin)
+MIT. Built for [SLayer](https://github.com/MotleyAI/slayer) by [Motley](https://motley.ai), runs on [Grafana](https://grafana.com).

@@ -1,0 +1,353 @@
+{
+  "title": "SLayer demo — Jaffle Shop",
+  "uid": "slayer-jaffle-demo",
+  "tags": ["slayer", "demo", "jaffle-shop"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "editable": true,
+  "graphTooltip": 1,
+  "time": {
+    "from": "now-180d",
+    "to": "now"
+  },
+  "templating": {
+    "list": [
+      {
+        "name": "store",
+        "label": "Store",
+        "type": "query",
+        "datasource": { "type": "motley-slayer-datasource", "uid": "slayer" },
+        "query": "{\"source_model\":\"orders\",\"dimensions\":[{\"name\":\"store_id\"}],\"limit\":50}",
+        "refresh": 1,
+        "includeAll": true,
+        "multi": true,
+        "current": { "selected": false, "text": "All", "value": "$__all" }
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Total orders",
+      "gridPos": { "x": 0, "y": 0, "w": 6, "h": 4 },
+      "datasource": { "type": "motley-slayer-datasource", "uid": "slayer" },
+      "targets": [
+        {
+          "refId": "A",
+          "source_model": "orders",
+          "measures": [{ "formula": "*:count" }]
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "decimals": 0,
+          "unit": "short"
+        }
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "colorMode": "value",
+        "graphMode": "area",
+        "textMode": "auto"
+      }
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Total revenue",
+      "gridPos": { "x": 6, "y": 0, "w": 6, "h": 4 },
+      "datasource": { "type": "motley-slayer-datasource", "uid": "slayer" },
+      "targets": [
+        {
+          "refId": "A",
+          "source_model": "orders",
+          "measures": [{ "formula": "order_total:sum" }]
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "decimals": 0,
+          "unit": "currencyUSD",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{ "color": "green", "value": null }]
+          }
+        }
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "colorMode": "value",
+        "graphMode": "area",
+        "textMode": "auto"
+      }
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Average order value",
+      "gridPos": { "x": 12, "y": 0, "w": 6, "h": 4 },
+      "datasource": { "type": "motley-slayer-datasource", "uid": "slayer" },
+      "targets": [
+        {
+          "refId": "A",
+          "source_model": "orders",
+          "measures": [{ "formula": "order_total:sum / *:count", "name": "aov" }]
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 2,
+          "unit": "currencyUSD"
+        }
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "orders.aov", "values": false },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "auto"
+      }
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Unique customers",
+      "gridPos": { "x": 18, "y": 0, "w": 6, "h": 4 },
+      "datasource": { "type": "motley-slayer-datasource", "uid": "slayer" },
+      "targets": [
+        {
+          "refId": "A",
+          "source_model": "orders",
+          "measures": [{ "formula": "customer_id:count_distinct", "name": "customers" }]
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "decimals": 0, "unit": "short" }
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "colorMode": "value",
+        "graphMode": "area",
+        "textMode": "auto"
+      }
+    },
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "Daily revenue",
+      "gridPos": { "x": 0, "y": 4, "w": 16, "h": 9 },
+      "datasource": { "type": "motley-slayer-datasource", "uid": "slayer" },
+      "targets": [
+        {
+          "refId": "A",
+          "source_model": "orders",
+          "measures": [{ "formula": "order_total:sum" }],
+          "time_dimensions": [{ "dimension": "ordered_at", "granularity": "day" }]
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 15, "showPoints": "never" },
+          "unit": "currencyUSD",
+          "color": { "mode": "palette-classic" }
+        }
+      },
+      "options": {
+        "legend": { "showLegend": false, "displayMode": "list", "placement": "bottom" },
+        "tooltip": { "mode": "single", "sort": "none" }
+      }
+    },
+    {
+      "id": 6,
+      "type": "barchart",
+      "title": "Store leaderboard",
+      "gridPos": { "x": 16, "y": 4, "w": 8, "h": 14 },
+      "datasource": { "type": "motley-slayer-datasource", "uid": "slayer" },
+      "targets": [
+        {
+          "refId": "A",
+          "source_model": "orders",
+          "measures": [{ "formula": "order_total:sum" }],
+          "dimensions": [{ "name": "stores.name" }],
+          "order": [{ "column": "order_total:sum", "direction": "desc" }]
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD",
+          "color": { "mode": "palette-classic" }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "orders.stores.name" },
+            "properties": [{ "id": "displayName", "value": "Store" }]
+          }
+        ]
+      },
+      "options": {
+        "orientation": "horizontal",
+        "xField": "orders.stores.name",
+        "showValue": "auto",
+        "legend": { "showLegend": false, "displayMode": "list", "placement": "bottom" }
+      }
+    },
+    {
+      "id": 7,
+      "type": "table",
+      "title": "Cohort retention — active customers by months since first order",
+      "description": "Rows are signup cohorts (the month each customer first ordered). Columns are months elapsed since that first order. Cells show how many of the cohort were still active. Powered by a SLayer multi-stage (source_queries) model: stage 1 finds each customer's first month, stage 2 joins orders back to that cohort and computes the offset — same DSL your AI agents use over MCP.",
+      "gridPos": { "x": 0, "y": 13, "w": 16, "h": 14 },
+      "datasource": { "type": "motley-slayer-datasource", "uid": "slayer" },
+      "targets": [
+        {
+          "refId": "A",
+          "source_queries": [
+            {
+              "name": "customer_first",
+              "source_model": "orders",
+              "dimensions": [{ "name": "customer_id" }],
+              "measures": [{ "formula": "ordered_at:min", "name": "cohort_first" }]
+            },
+            {
+              "name": "enriched",
+              "source_model": {
+                "source_name": "orders",
+                "joins": [
+                  {
+                    "target_model": "customer_first",
+                    "join_pairs": [["customer_id", "customer_id"]],
+                    "join_type": "left"
+                  }
+                ],
+                "columns": [
+                  {
+                    "name": "cohort_month",
+                    "sql": "date_trunc('month', customer_first.cohort_first)",
+                    "type": "TIMESTAMP"
+                  },
+                  {
+                    "name": "period_months",
+                    "sql": "datediff('month', date_trunc('month', customer_first.cohort_first), date_trunc('month', ordered_at))",
+                    "type": "INT"
+                  }
+                ]
+              },
+              "dimensions": [{ "name": "cohort_month" }, { "name": "period_months" }],
+              "measures": [{ "formula": "customer_id:count_distinct", "name": "active_customers" }]
+            }
+          ],
+          "source_model": "enriched",
+          "dimensions": [{ "name": "cohort_month" }, { "name": "period_months" }],
+          "measures": [{ "formula": "active_customers:sum", "name": "active" }],
+          "filters": ["period_months >= 0", "period_months <= 12"],
+          "order": [
+            { "column": "cohort_month", "direction": "asc" },
+            { "column": "period_months", "direction": "asc" }
+          ]
+        }
+      ],
+      "transformations": [
+        {
+          "id": "convertFieldType",
+          "options": {
+            "conversions": [
+              { "targetField": "enriched.period_months", "destinationType": "number" },
+              { "targetField": "enriched.cohort_month", "destinationType": "time" }
+            ]
+          }
+        },
+        {
+          "id": "groupingToMatrix",
+          "options": {
+            "columnField": "enriched.period_months",
+            "rowField": "enriched.cohort_month",
+            "valueField": "enriched.active"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "cellOptions": { "type": "color-background", "mode": "gradient" },
+            "align": "center",
+            "filterable": false
+          },
+          "color": { "mode": "continuous-BlYlRd" },
+          "decimals": 0
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "enriched.cohort_month\\enriched.period_months" },
+            "properties": [
+              { "id": "displayName", "value": "Cohort" },
+              { "id": "custom.cellOptions", "value": { "type": "auto" } },
+              { "id": "custom.align", "value": "left" },
+              { "id": "unit", "value": "time:YYYY-MM" }
+            ]
+          },
+          {
+            "matcher": { "id": "byRegexp", "options": "^enriched\\..+$" },
+            "properties": [{ "id": "noValue", "value": "·" }]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm"
+      }
+    },
+    {
+      "id": 8,
+      "type": "table",
+      "title": "Store stats",
+      "gridPos": { "x": 16, "y": 18, "w": 8, "h": 9 },
+      "datasource": { "type": "motley-slayer-datasource", "uid": "slayer" },
+      "targets": [
+        {
+          "refId": "A",
+          "source_model": "orders",
+          "measures": [
+            { "formula": "*:count" },
+            { "formula": "order_total:sum" },
+            { "formula": "order_total:sum / *:count", "name": "aov" }
+          ],
+          "dimensions": [{ "name": "stores.name" }],
+          "order": [{ "column": "order_total:sum", "direction": "desc" }],
+          "limit": 50
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "custom": { "align": "auto" } },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "orders.order_total_sum" },
+            "properties": [
+              { "id": "unit", "value": "currencyUSD" },
+              { "id": "displayName", "value": "Revenue" }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "orders.aov" },
+            "properties": [
+              { "id": "unit", "value": "currencyUSD" },
+              { "id": "decimals", "value": 2 },
+              { "id": "displayName", "value": "Avg order value" }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "orders._count" },
+            "properties": [{ "id": "displayName", "value": "Orders" }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "orders.stores.name" },
+            "properties": [{ "id": "displayName", "value": "Store" }]
+          }
+        ]
+      },
+      "options": { "showHeader": true }
+    }
+  ]
+}

@@ -34,9 +34,16 @@ func NewClient(baseURL, apiKey string) *Client {
 // Measures / Dimensions / TimeDimensions / Order accept dict-shaped entries
 // (string entries like "*:count" are also accepted by SLayer's pre-validators,
 // but Go callers should prefer dicts).
+//
+// SourceQueries is the multi-stage / queries-as-models construct
+// (https://motley-slayer.readthedocs.io/en/latest/examples/06_multistage_queries/).
+// It's kept as json.RawMessage so the recursive nested-query shape passes
+// through verbatim without our struct dictating the inner field set — useful
+// for forward-compat with SlayerQuery additions and saves us a recursive type.
 type Query struct {
 	Name           string                   `json:"name,omitempty"`
 	SourceModel    string                   `json:"source_model,omitempty"`
+	SourceQueries  json.RawMessage          `json:"source_queries,omitempty"`
 	Measures       []map[string]interface{} `json:"measures,omitempty"`
 	Dimensions     []map[string]interface{} `json:"dimensions,omitempty"`
 	TimeDimensions []map[string]interface{} `json:"time_dimensions,omitempty"`
@@ -78,8 +85,13 @@ type Response struct {
 }
 
 // Query runs a SLayer query against POST /query.
+//
+// Wire shape: SLayer's REST accepts `Union[QueryRequest, List[QueryRequest]]`.
+// We send the list form when `q.SourceQueries` is non-empty (multi-stage) and
+// the single-object form otherwise — see buildQueryBody for the encoding
+// details.
 func (c *Client) Query(ctx context.Context, q Query) (*Response, error) {
-	body, err := json.Marshal(q)
+	body, err := buildQueryBody(q)
 	if err != nil {
 		return nil, fmt.Errorf("marshal query: %w", err)
 	}
@@ -110,6 +122,40 @@ func (c *Client) Query(ctx context.Context, q Query) (*Response, error) {
 	return &out, nil
 }
 
+// ModelInfo is the shape returned by GET /models — name + datasource.
+type ModelInfo struct {
+	Name       string `json:"name"`
+	DataSource string `json:"data_source"`
+}
+
+// Models lists all SLayer models for dropdown autocomplete in the QueryEditor.
+func (c *Client) Models(ctx context.Context) ([]ModelInfo, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.BaseURL+"/models", nil)
+	if err != nil {
+		return nil, err
+	}
+	if c.APIKey != "" {
+		req.Header.Set("Authorization", "Bearer "+c.APIKey)
+	}
+	resp, err := c.HTTPClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("call slayer: %w", err)
+	}
+	defer resp.Body.Close()
+	raw, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("read body: %w", err)
+	}
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("slayer /models %d: %s", resp.StatusCode, truncate(string(raw), 256))
+	}
+	var out []ModelInfo
+	if err := json.Unmarshal(raw, &out); err != nil {
+		return nil, fmt.Errorf("decode /models: %w", err)
+	}
+	return out, nil
+}
+
 // Health pings GET /health. Returns nil on 200.
 func (c *Client) Health(ctx context.Context) error {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.BaseURL+"/health", nil)
@@ -128,6 +174,42 @@ func (c *Client) Health(ctx context.Context) error {
 		return fmt.Errorf("slayer health %d", resp.StatusCode)
 	}
 	return nil
+}
+
+// buildQueryBody encodes a Query for SLayer's POST /query. SLayer ≥0.6.7
+// accepts `Union[QueryRequest, QueryListRequest]`:
+//
+//   - Without source_queries — a single QueryRequest object (legacy shape).
+//   - With source_queries — a QueryListRequest wrapper:
+//     `{"queries": [stage_1, stage_2, …, outer_without_source_queries]}`.
+//     Earlier entries are intermediate stages (each carrying its own `name`)
+//     and the outer query (with its `source_queries` field cleared to avoid
+//     recursion) is appended last. The outer query's `source_model` can
+//     reference any prior stage's `name`.
+//
+// `SourceQueries` is a json.RawMessage so the recursive nested-query shape
+// passes through verbatim — we don't need to type the inner fields, and SLayer
+// stays the only validator of the inner SlayerQuery schema.
+func buildQueryBody(q Query) ([]byte, error) {
+	if len(q.SourceQueries) == 0 {
+		return json.Marshal(q)
+	}
+	var stages []json.RawMessage
+	if err := json.Unmarshal(q.SourceQueries, &stages); err != nil {
+		return nil, fmt.Errorf("source_queries: %w", err)
+	}
+	outer := q
+	outer.SourceQueries = nil
+	outerBytes, err := json.Marshal(outer)
+	if err != nil {
+		return nil, fmt.Errorf("outer query: %w", err)
+	}
+	list := make([]json.RawMessage, 0, len(stages)+1)
+	list = append(list, stages...)
+	list = append(list, outerBytes)
+	return json.Marshal(struct {
+		Queries []json.RawMessage `json:"queries"`
+	}{Queries: list})
 }
 
 func truncate(s string, n int) string {

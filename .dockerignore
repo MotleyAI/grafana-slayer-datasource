@@ -1,0 +1,27 @@
+# Build context exclusions for the root Dockerfile.
+# Anything listed here is invisible to `COPY .` and similar inside the build
+# context, which keeps the image small and rebuilds fast.
+
+# VCS, CI, editor / agent state
+.git
+.github
+.gitattributes
+.vscode
+.idea
+.claude
+.codex
+
+# Build outputs and caches — the Dockerfile rebuilds these fresh inside.
+node_modules
+dist
+.eslintcache
+*.log
+
+# Tests + e2e (image doesn't run tests)
+tests
+playwright-report
+test-results
+playwright.config.ts
+
+# OS noise
+.DS_Store

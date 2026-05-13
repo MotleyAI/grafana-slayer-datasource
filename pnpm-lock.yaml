@@ -36,15 +36,9 @@ importers:
       '@grafana/eslint-config':
         specifier: ^9.0.0
         version: 9.0.0(@stylistic/eslint-plugin-ts@4.4.1(eslint@9.39.4)(typescript@5.9.2))(@typescript-eslint/eslint-plugin@8.59.3(@typescript-eslint/parser@8.59.3(eslint@9.39.4)(typescript@5.9.2))(eslint@9.39.4)(typescript@5.9.2))(@typescript-eslint/parser@8.59.3(eslint@9.39.4)(typescript@5.9.2))(eslint-config-prettier@10.1.8(eslint@9.39.4))(eslint-plugin-jsdoc@52.0.4(eslint@9.39.4))(eslint-plugin-react-hooks@7.1.1(eslint@9.39.4))(eslint-plugin-react@7.37.5(eslint@9.39.4))(eslint@9.39.4)(typescript@5.9.2)
-      '@grafana/plugin-e2e':
-        specifier: ^3.6.1
-        version: 3.7.1(@playwright/test@1.60.0)
       '@grafana/tsconfig':
         specifier: ^2.0.1
         version: 2.1.0
-      '@playwright/test':
-        specifier: ^1.57.0
-        version: 1.60.0
       '@stylistic/eslint-plugin-ts':
         specifier: ^4.4.0
         version: 4.4.1(eslint@9.39.4)(typescript@5.9.2)
@@ -509,9 +503,6 @@ packages:
   '@grafana/e2e-selectors@12.4.2':
     resolution: {integrity: sha512-Kx2joGz/jql32HgD6+pJTHRkAGL7rJC+WE+fl/wZFThmQUIGpuJjwJYL0aOmYvOZeWwVLFnyrFCiNs48s3AZJg==}
 
-  '@grafana/e2e-selectors@13.1.0-24448182242':
-    resolution: {integrity: sha512-C8VxaFh4PGWhPBOwol3Fo0UBp1//7XNnjg7WG+t3p0P8Q2cw5HZ2NgQt1OFq9radjmWEc3DJQZvxoelI4TIOJA==}
-
   '@grafana/eslint-config@9.0.0':
     resolution: {integrity: sha512-Jw7/kyO29iNKiHrDwsVwP3/YSNdYCt8ofCgSFNfcYQeK7+Z3zn1RrMBXWohVQ47OuwjXr6AUqo5ReQBCPq6Fzw==}
     peerDependencies:
@@ -535,16 +526,6 @@ packages:
     resolution: {integrity: sha512-PcT0oI0xE7bl/nLqnLKawQGDC6TT/uADmegHRf+JP/mE7VeJKwloj3MWVzi5T4r7JE5s2VlG7nQiEWn5qdHhUw==}
     peerDependencies:
       react: '>=18'
-
-  '@grafana/plugin-e2e@3.7.1':
-    resolution: {integrity: sha512-g6LgZWhNuNmMAYGf0b0VM+11HIj37A09amk5hj3oVss5ZNPs8KvF32o3KWl2Vk+wXaZF9nxAEaAtX5Y6dWIJ/A==}
-    engines: {node: '>=20 <=24'}
-    peerDependencies:
-      '@axe-core/playwright': ^4.11.1
-      '@playwright/test': ^1.52.0
-    peerDependenciesMeta:
-      '@axe-core/playwright':
-        optional: true
 
   '@grafana/runtime@12.4.2':
     resolution: {integrity: sha512-EKXEBwQ+sCQUyxt4phYRICCQCzRNPLcM5WvkiKMfpm9DQxgHLUQ9hX8HPptdN/BTzlWolOcQnwMYmcbWTMmCoA==}
@@ -887,11 +868,6 @@ packages:
 
   '@petamoriken/float16@3.9.3':
     resolution: {integrity: sha512-8awtpHXCx/bNpFt4mt2xdkgtgVvKqty8VbjHI/WWWQuEw+KLzFot3f4+LkQY9YmOtq7A5GdOnqoIC8Pdygjk2g==}
-
-  '@playwright/test@1.60.0':
-    resolution: {integrity: sha512-O71yZIbAh/PxDMNGns37GHBIfrVkEVyn+AXyIa5dOTfb4/xNvRWV+Vv/NMbNCtODB/pO7vLlF2OTmMVLhmr7Ag==}
-    engines: {node: '>=18'}
-    hasBin: true
 
   '@popperjs/core@2.11.8':
     resolution: {integrity: sha512-P1st0aksCrn9sGZhp8GMYwBnQsbvAWsZAX44oXNNvLHGqAOcoVxmjZiohstwQ7SqKnbR47akdNi+uleWD8+g6A==}
@@ -2577,11 +2553,6 @@ packages:
   fs.realpath@1.0.0:
     resolution: {integrity: sha512-OO0pH2lK6a0hZnAdau5ItzHPI6pUlvI7jMVnxUQRtw4owF2wk8lOSabtGDCTP4Ggrg2MbGnWO9X8K1t4+fGMDw==}
 
-  fsevents@2.3.2:
-    resolution: {integrity: sha512-xiqMQR4xAeHTuB9uWm+fFRcIOgKBMiOBP+eXiyT7jsgVCq1bkVygt00oASowB7EdtpOHaaPgKt812P9ab+DDKA==}
-    engines: {node: ^8.16.0 || ^10.6.0 || >=11.0.0}
-    os: [darwin]
-
   fsevents@2.3.3:
     resolution: {integrity: sha512-5xoDfX+fL7faATnagmWPpbFtwh/R77WmMMqqHGS65C3vvB0YHrgF+B1YmZ3441tMj5n63k0212XNoJwzlhffQw==}
     engines: {node: ^8.16.0 || ^10.6.0 || >=11.0.0}
@@ -3598,16 +3569,6 @@ packages:
     resolution: {integrity: sha512-HRDzbaKjC+AOWVXxAU/x54COGeIv9eb+6CkDSQoNTt4XyWoIJvuPsXizxu/Fr23EiekbtZwmh1IcIG/l/a10GQ==}
     engines: {node: '>=8'}
 
-  playwright-core@1.60.0:
-    resolution: {integrity: sha512-9bW6zvX/m0lEbgTKJ6YppOKx8H3VOPBMOCFh2irXFOT4BbHgrx5hPjwJYLT40Lu+4qtD36qKc/Hn56StUW57IA==}
-    engines: {node: '>=18'}
-    hasBin: true
-
-  playwright@1.60.0:
-    resolution: {integrity: sha512-hheHdokM8cdqCb0lcE3s+zT4t4W+vvjpGxsZlDnikarzx8tSzMebh3UiFtgqwFwnTnjYQcsyMF8ei2mCO/tpeA==}
-    engines: {node: '>=18'}
-    hasBin: true
-
   portfinder@1.0.38:
     resolution: {integrity: sha512-rEwq/ZHlJIKw++XtLAO8PPuOQA/zaPJOZJ37BVuN97nLpMJeuDVLVGRwbFoBgLudgdTMP2hdRJP++H+8QOA3vg==}
     engines: {node: '>= 10.12'}
@@ -4582,10 +4543,6 @@ packages:
     resolution: {integrity: sha512-0/A9rDy9P7cJ+8w1c9WD9V//9Wj15Ce2MPz8Ri6032usz+NfePxx5AcN3bN+r6ZL6jEo066/yNYB3tn4pQEx+A==}
     hasBin: true
 
-  uuid@13.0.2:
-    resolution: {integrity: sha512-vzi9uRZ926x4XV73S/4qQaTwPXM2JBj6/6lI/byHH1jOpCzb0zDbfytgA9LcN/hzb2l7WQSQnxITOVx5un/wGw==}
-    hasBin: true
-
   uwrap@0.1.2:
     resolution: {integrity: sha512-f3EJhcx+pB6sWtBZOKAcJ+RweICm/FmFiqCfMy3OLpsXNcf2P5tEYn8nu3BIBYTI/srzN+VrfRN1tCkJL6QuLg==}
 
@@ -4775,11 +4732,6 @@ packages:
   yaml@1.10.3:
     resolution: {integrity: sha512-vIYeF1u3CjlhAFekPPAk2h/Kv4T3mAkMox5OymRiJQB0spDP10LHvt+K7G9Ny6NuuMAb25/6n1qyUjAcGNf/AA==}
     engines: {node: '>= 6'}
-
-  yaml@2.9.0:
-    resolution: {integrity: sha512-2AvhNX3mb8zd6Zy7INTtSpl1F15HW6Wnqj0srWlkKLcpYl/gMIMJiyuGq2KeI2YFxUPjdlB+3Lc10seMLtL4cA==}
-    engines: {node: '>= 14.6'}
-    hasBin: true
 
   yargs-parser@21.1.1:
     resolution: {integrity: sha512-tVpsJW7DdjecAiFpbIB1e3qxIQsE6NoPc5/eTdrbbIC4h0LVsWhnoa3g+m2HclBIujHzsxZ4VJVA+GUuc2/LBw==}
@@ -5279,12 +5231,6 @@ snapshots:
       tslib: 2.8.1
       typescript: 5.9.2
 
-  '@grafana/e2e-selectors@13.1.0-24448182242':
-    dependencies:
-      semver: 7.8.0
-      tslib: 2.8.1
-      typescript: 5.9.2
-
   '@grafana/eslint-config@9.0.0(@stylistic/eslint-plugin-ts@4.4.1(eslint@9.39.4)(typescript@5.9.2))(@typescript-eslint/eslint-plugin@8.59.3(@typescript-eslint/parser@8.59.3(eslint@9.39.4)(typescript@5.9.2))(eslint@9.39.4)(typescript@5.9.2))(@typescript-eslint/parser@8.59.3(eslint@9.39.4)(typescript@5.9.2))(eslint-config-prettier@10.1.8(eslint@9.39.4))(eslint-plugin-jsdoc@52.0.4(eslint@9.39.4))(eslint-plugin-react-hooks@7.1.1(eslint@9.39.4))(eslint-plugin-react@7.37.5(eslint@9.39.4))(eslint@9.39.4)(typescript@5.9.2)':
     dependencies:
       '@stylistic/eslint-plugin-ts': 4.4.1(eslint@9.39.4)(typescript@5.9.2)
@@ -5325,14 +5271,6 @@ snapshots:
       - react-native
       - supports-color
       - typescript
-
-  '@grafana/plugin-e2e@3.7.1(@playwright/test@1.60.0)':
-    dependencies:
-      '@grafana/e2e-selectors': 13.1.0-24448182242
-      '@playwright/test': 1.60.0
-      semver: 7.8.0
-      uuid: 13.0.2
-      yaml: 2.9.0
 
   '@grafana/runtime@12.4.2(@openfeature/web-sdk@1.8.0(@openfeature/core@1.10.0))(@react-spectrum/provider@3.11.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/react@18.3.28)(eslint@9.39.4)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.9.2)':
     dependencies:
@@ -5871,10 +5809,6 @@ snapshots:
     optional: true
 
   '@petamoriken/float16@3.9.3': {}
-
-  '@playwright/test@1.60.0':
-    dependencies:
-      playwright: 1.60.0
 
   '@popperjs/core@2.11.8': {}
 
@@ -7825,9 +7759,6 @@ snapshots:
 
   fs.realpath@1.0.0: {}
 
-  fsevents@2.3.2:
-    optional: true
-
   fsevents@2.3.3:
     optional: true
 
@@ -9031,14 +8962,6 @@ snapshots:
     dependencies:
       find-up: 4.1.0
 
-  playwright-core@1.60.0: {}
-
-  playwright@1.60.0:
-    dependencies:
-      playwright-core: 1.60.0
-    optionalDependencies:
-      fsevents: 2.3.2
-
   portfinder@1.0.38:
     dependencies:
       async: 3.2.6
@@ -10089,8 +10012,6 @@ snapshots:
 
   uuid@11.1.0: {}
 
-  uuid@13.0.2: {}
-
   uwrap@0.1.2: {}
 
   v8-compile-cache-lib@3.0.1: {}
@@ -10311,8 +10232,6 @@ snapshots:
   yallist@3.1.1: {}
 
   yaml@1.10.3: {}
-
-  yaml@2.9.0: {}
 
   yargs-parser@21.1.1: {}
 

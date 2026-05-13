@@ -7,17 +7,25 @@
   "backend": true,
   "executable": "gpx_slayer",
   "info": {
-    "description": "Query SLayer (Motley's semantic layer) from Grafana.",
+    "description": "Build Grafana dashboards over SLayer — Motley's open-source, agent-first semantic layer. Same structured DSL your AI agents use over MCP, against Postgres, MySQL, ClickHouse, Snowflake, BigQuery, DuckDB and more.",
     "author": {
       "name": "MotleyAI"
     },
-    "keywords": ["datasource"],
+    "keywords": ["datasource", "slayer", "semantic-layer", "mcp", "analytics", "sql", "bi", "ai"],
     "logos": {
       "small": "img/logo.svg",
       "large": "img/logo.svg"
     },
-    "links": [],
-    "screenshots": [],
+    "links": [
+      { "name": "GitHub", "url": "https://github.com/MotleyAI/grafana-slayer-datasource" },
+      { "name": "SLayer", "url": "https://github.com/MotleyAI/slayer" },
+      { "name": "Documentation", "url": "https://motley-slayer.readthedocs.io/" }
+    ],
+    "screenshots": [
+      { "name": "Demo dashboard",      "path": "img/dashboard-overview.jpg" },
+      { "name": "Query editor",        "path": "img/query-editor.jpg" },
+      { "name": "Multi-stage queries", "path": "img/cohort-editor.jpg" }
+    ],
     "version": "%VERSION%",
     "updated": "%TODAY%"
   },

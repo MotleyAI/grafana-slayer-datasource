@@ -1,34 +1,58 @@
 import { DataSourceJsonData } from '@grafana/data';
 import { DataQuery } from '@grafana/schema';
 
-export interface MyQuery extends DataQuery {
-  queryText?: string;
-  constant: number;
+// Mirrors pkg/slayer.Query (Go). Keep in sync — they're two halves of the same
+// wire contract. See SLayer's REST API docs:
+// https://motley-slayer.readthedocs.io/en/latest/concepts/queries/
+
+export interface SlayerMeasure {
+  formula: string;
+  name?: string;
+  label?: string;
 }
 
-export const DEFAULT_QUERY: Partial<MyQuery> = {
-  constant: 6.5,
+export interface SlayerDimension {
+  name: string;
+  label?: string;
+}
+
+export interface SlayerTimeDimension {
+  dimension: string;
+  granularity?: string;
+}
+
+// `source_model` accepts a plain model name (string) OR an inline
+// `SlayerModel` / `ModelExtension` (dict) — see SLayer's SlayerQuery schema.
+// We type the inline form loosely; SLayer remains the validator.
+export type SlayerSourceModel = string | Record<string, unknown>;
+
+export interface SlayerQuery extends DataQuery {
+  source_model?: SlayerSourceModel;
+  // Run-by-name: invoke a stored query-backed model. Mutually exclusive with
+  // source_model + other query fields.
+  name?: string;
+  // Multi-stage / queries-as-models — each entry is itself a SlayerQuery and
+  // can reference prior siblings by their `name`. See SLayer docs:
+  // https://motley-slayer.readthedocs.io/en/latest/examples/06_multistage_queries/
+  source_queries?: SlayerQuery[];
+  measures?: SlayerMeasure[];
+  dimensions?: SlayerDimension[];
+  time_dimensions?: SlayerTimeDimension[];
+  filters?: string[];
+  limit?: number;
+  offset?: number;
+  variables?: Record<string, string | number>;
+}
+
+export const DEFAULT_QUERY: Partial<SlayerQuery> = {
+  source_model: 'orders',
+  measures: [{ formula: '*:count' }],
 };
 
-export interface DataPoint {
-  Time: number;
-  Value: number;
+export interface SlayerOptions extends DataSourceJsonData {
+  url?: string;
 }
 
-export interface DataSourceResponse {
-  datapoints: DataPoint[];
-}
-
-/**
- * These are options configured for each DataSource instance
- */
-export interface MyDataSourceOptions extends DataSourceJsonData {
-  path?: string;
-}
-
-/**
- * Value that is used in the backend, but never sent over HTTP to the frontend
- */
-export interface MySecureJsonData {
+export interface SlayerSecureOptions {
   apiKey?: string;
 }

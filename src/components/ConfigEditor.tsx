@@ -1,71 +1,66 @@
 import React, { ChangeEvent } from 'react';
-import { InlineField, Input, SecretInput } from '@grafana/ui';
+import { InlineField, Input, SecretInput, FieldSet } from '@grafana/ui';
 import { DataSourcePluginOptionsEditorProps } from '@grafana/data';
-import { MyDataSourceOptions, MySecureJsonData } from '../types';
+import { SlayerOptions, SlayerSecureOptions } from '../types';
 
-interface Props extends DataSourcePluginOptionsEditorProps<MyDataSourceOptions, MySecureJsonData> {}
+type Props = DataSourcePluginOptionsEditorProps<SlayerOptions, SlayerSecureOptions>;
 
 export function ConfigEditor(props: Props) {
   const { onOptionsChange, options } = props;
   const { jsonData, secureJsonFields, secureJsonData } = options;
 
-  const onPathChange = (event: ChangeEvent<HTMLInputElement>) => {
+  const onURLChange = (event: ChangeEvent<HTMLInputElement>) => {
     onOptionsChange({
       ...options,
-      jsonData: {
-        ...jsonData,
-        path: event.target.value,
-      },
+      jsonData: { ...jsonData, url: event.target.value },
     });
   };
 
-  // Secure field (only sent to the backend)
   const onAPIKeyChange = (event: ChangeEvent<HTMLInputElement>) => {
     onOptionsChange({
       ...options,
-      secureJsonData: {
-        apiKey: event.target.value,
-      },
+      secureJsonData: { apiKey: event.target.value },
     });
   };
 
   const onResetAPIKey = () => {
     onOptionsChange({
       ...options,
-      secureJsonFields: {
-        ...options.secureJsonFields,
-        apiKey: false,
-      },
-      secureJsonData: {
-        ...options.secureJsonData,
-        apiKey: '',
-      },
+      secureJsonFields: { ...(secureJsonFields ?? {}), apiKey: false },
+      secureJsonData: { ...(secureJsonData ?? {}), apiKey: '' },
     });
   };
 
   return (
-    <>
-      <InlineField label="Path" labelWidth={14} interactive tooltip={'Json field returned to frontend'}>
+    <FieldSet>
+      <InlineField
+        label="SLayer URL"
+        labelWidth={20}
+        tooltip="Base URL of the SLayer REST API (e.g. http://localhost:5143 or http://slayer:5143 inside docker-compose)."
+      >
         <Input
-          id="config-editor-path"
-          onChange={onPathChange}
-          value={jsonData.path}
-          placeholder="Enter the path, e.g. /api/v1"
-          width={40}
+          id="config-editor-url"
+          value={jsonData.url ?? ''}
+          onChange={onURLChange}
+          placeholder="http://localhost:5143"
+          width={50}
         />
       </InlineField>
-      <InlineField label="API Key" labelWidth={14} interactive tooltip={'Secure json field (backend only)'}>
+      <InlineField
+        label="API Key"
+        labelWidth={20}
+        tooltip="Reserved for a future SLayer auth release — SLayer ≤0.6.x has no auth; leave blank."
+      >
         <SecretInput
-          required
           id="config-editor-api-key"
-          isConfigured={secureJsonFields.apiKey}
-          value={secureJsonData?.apiKey}
-          placeholder="Enter your API key"
-          width={40}
+          isConfigured={secureJsonFields?.apiKey}
+          value={secureJsonData?.apiKey ?? ''}
+          placeholder="(none)"
+          width={50}
           onReset={onResetAPIKey}
           onChange={onAPIKeyChange}
         />
       </InlineField>
-    </>
+    </FieldSet>
   );
 }

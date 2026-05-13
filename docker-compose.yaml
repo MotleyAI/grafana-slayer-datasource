@@ -1,8 +1,28 @@
+# SLayer-Grafana demo. `docker compose up` brings up SLayer (with the bundled
+# Jaffle Shop demo data) and Grafana with the plugin pre-provisioned and a
+# polished demo dashboard auto-loaded under the "SLayer" folder. Open
+# http://localhost:3000 — anonymous Admin is enabled.
+#
+# First boot does a full multi-stage Docker build (frontend + backend +
+# Grafana image) which takes ~5 minutes. Subsequent boots are fast.
+# Only requirement on the host: Docker (with Compose v2).
+#
+# For active plugin development with hot-reload of Go/TS changes, use
+# `pnpm server` — it wraps docker-compose.dev.yaml.
+
 services:
   grafana:
-    extends:
-      file: .config/docker-compose-base.yaml
-      service: grafana
+    build:
+      context: .
+    container_name: grafana
+    ports:
+      - '3000:3000'
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: 'true'
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
+      GF_LOG_LEVEL: warn
+    volumes:
+      - ./provisioning:/etc/grafana/provisioning:ro
     depends_on:
       slayer:
         condition: service_healthy
@@ -12,15 +32,15 @@ services:
     container_name: slayer
     ports:
       - '5143:5143'
-    # pip-install the published motley-slayer package on each up; not the most
-    # efficient (cold ~45-60s), but avoids maintaining a custom Dockerfile.
-    # Optimization candidate: bake into an image once the API stabilizes.
+    # pip-install motley-slayer on container up. Slow on cold cache (~45-60s);
+    # the pip cache volume below speeds up subsequent boots. Optimization
+    # candidate: bake into a Dockerfile once the SLayer API stabilizes.
     command:
       - bash
       - -c
       - |
         set -e
-        pip install --quiet --root-user-action=ignore 'motley-slayer'
+        pip install --quiet --root-user-action=ignore 'motley-slayer==0.6.7'
         exec slayer serve --demo --host 0.0.0.0
     healthcheck:
       test:

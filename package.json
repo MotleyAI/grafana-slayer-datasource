@@ -1,6 +1,6 @@
 {
-  "name": "slayer",
-  "version": "1.0.0",
+  "name": "grafana-slayer-datasource",
+  "version": "0.1.0",
   "scripts": {
     "build": "webpack -c ./.config/webpack/webpack.config.ts --env production",
     "dev": "webpack -w -c ./.config/webpack/webpack.config.ts --env development",
@@ -9,8 +9,7 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint --cache .",
     "lint:fix": "pnpm run lint --fix && prettier --write --list-different .",
-    "e2e": "playwright test",
-    "server": "docker compose up --build",
+    "server": "docker compose -f docker-compose.dev.yaml up --build",
     "sign": "npx --yes @grafana/sign-plugin@latest",
     "check:frontend": "pnpm typecheck && pnpm lint && pnpm test:ci",
     "check:backend": "GOTOOLCHAIN=auto go vet ./... && GOTOOLCHAIN=auto go test ./...",
@@ -20,9 +19,7 @@
   "license": "MIT",
   "devDependencies": {
     "@grafana/eslint-config": "^9.0.0",
-    "@grafana/plugin-e2e": "^3.6.1",
     "@grafana/tsconfig": "^2.0.1",
-    "@playwright/test": "^1.57.0",
     "@stylistic/eslint-plugin-ts": "^4.4.0",
     "@swc/core": "^1.15.0",
     "@swc/helpers": "^0.5.0",
@@ -73,8 +70,8 @@
     "@grafana/data": "12.4.2",
     "@grafana/i18n": "12.4.2",
     "@grafana/runtime": "12.4.2",
-    "@grafana/ui": "12.4.2",
     "@grafana/schema": "12.4.2",
+    "@grafana/ui": "12.4.2",
     "react": "^18.3.0",
     "react-dom": "^18.3.0"
   },
