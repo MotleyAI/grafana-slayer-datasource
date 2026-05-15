@@ -6,6 +6,11 @@ on:
   push:
     tags:
       - 'v*' # Run workflow on version tags, e.g. v1.0.0.
+  # Manual dry-run knob: lets you exercise the build path without tagging.
+  # When triggered this way the sign step is skipped (no policy_token below),
+  # so no remote state in Grafana's signing registry is mutated and you don't
+  # burn a version number on a failing build.
+  workflow_dispatch:
 
 permissions: read-all
 
@@ -19,11 +24,17 @@ jobs:
         with:
           persist-credentials: false
 
+      # build-plugin@v1.0.2 defaults go-version to "1.21" and sets
+      # GOTOOLCHAIN=local before invoking mage, so we MUST override here —
+      # go.mod requires 1.25.7 (Grafana plugin SDK also pins to 1.25).
+      # Pinning to the exact patch avoids any setup-go resolution ambiguity.
+      # node-version: '22' silences the engine warning and matches ci.yml.
+      #
+      # On manual workflow_dispatch runs we omit policy_token, so the action's
+      # internal sign step is skipped — useful for build smoke-tests without
+      # registering a version in Grafana's signing registry.
       - uses: grafana/plugin-actions/build-plugin@build-plugin/v1.0.2
-        # Uncomment to enable plugin signing
-        # (For more info on how to generate the access policy token see https://grafana.com/developers/plugin-tools/publish-a-plugin/sign-a-plugin#generate-an-access-policy-token)
-        #with:
-        # Make sure to save the token in your repository secrets
-        #policy_token: $
-        # Usage of GRAFANA_API_KEY is deprecated, prefer `policy_token` option above
-        #grafana_token: $
+        with:
+          policy_token: ${{ github.event_name == 'push' && secrets.GRAFANA_ACCESS_POLICY_TOKEN || '' }}
+          go-version: '1.25.7'
+          node-version: '22'

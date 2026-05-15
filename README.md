@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="src/img/logo.svg" alt="SLayer" width="120">
+  <img src="https://raw.githubusercontent.com/MotleyAI/slayer/main/docs/images/slayer-hero.png" alt="SLayer — AI agent operating a semantic layer" width="600">
 </p>
 
 <h1 align="center">SLayer for Grafana</h1>
@@ -15,7 +15,7 @@
 > **Status: beta.** PRs and issues welcome.
 
 <p align="center">
-  <img src="docs/images/dashboard-overview.jpg" alt="SLayer for Grafana — demo dashboard on Jaffle Shop data, with cohort retention, store leaderboard, daily revenue and KPIs" width="900">
+  <img src="https://raw.githubusercontent.com/MotleyAI/grafana-slayer-datasource/main/docs/images/dashboard-overview.jpg" alt="SLayer for Grafana — demo dashboard on Jaffle Shop data, with cohort retention, store leaderboard, daily revenue and KPIs" width="900">
 </p>
 
 ## Try it in 30 seconds
@@ -67,15 +67,42 @@ That's the central thesis: model your data once, query it from anywhere using th
 
 ## Attach your AI agent
 
-SLayer ships an MCP server (HTTP/SSE and stdio) exposed alongside its REST API. Point Claude Code at the running demo:
+Two MCP servers, two halves of the loop. Agents *read* with one and *write* with the other.
+
+**1. SLayer's MCP — query and model the data.** Introspect models, run queries, save memories, ingest new datasources. Already shipped with SLayer. Attach with one line:
 
 ```bash
 claude mcp add slayer --transport sse --url http://localhost:5143/mcp/sse
 ```
 
-Now your agent has tools to introspect models, run queries, save and recall memories, and create new datasources — all on the same data your Grafana dashboard sees. See [SLayer's MCP docs](https://motley-slayer.readthedocs.io/en/latest/reference/mcp/).
+See [SLayer's MCP docs](https://motley-slayer.readthedocs.io/en/latest/reference/mcp/) for the full tool list.
 
-> 🗺️ **Roadmap: plugin-hosted MCP for dashboard authoring.** A future MCP surface will let agents *create Grafana panels and dashboards* from natural-language prompts — e.g. *"show me revenue per store as a bar chart over the last quarter."* Open an issue if you want to help shape it.
+**2. SLayer-Grafana's MCP — author the dashboards.** This plugin hosts its own MCP server **inside Grafana itself** — served at the datasource's resource path. Three tools:
+
+| Tool | What it does |
+|---|---|
+| `list_dashboards` | Find dashboards by name; returns uid/title/tags/URL. |
+| `inspect_dashboard` | Read the panels already on a dashboard (id, type, title, gridPos, target query). |
+| `add_panel_to_dashboard` | Append a SLayer-backed panel: pass a SlayerQuery JSON, a title, and (optionally) a panel type (`table` / `stat` / `timeseries` / `barchart`). Panel lands full-width at the bottom; user can re-arrange in Grafana's editor afterwards. |
+
+Attach with one line — no separate binary, no extra container, just an HTTP URL:
+
+```bash
+claude mcp add slayer-grafana --transport http \
+  --url http://localhost:3000/api/datasources/uid/slayer/resources/mcp
+```
+
+Auth flows through Grafana automatically — agent requests inherit whatever Grafana auth you use (session, service-account token, anonymous). For real installs:
+
+```bash
+claude mcp add slayer-grafana --transport http \
+  --url https://grafana.example.com/api/datasources/uid/<your-slayer-ds>/resources/mcp \
+  --header "Authorization: Bearer $GRAFANA_TOKEN"
+```
+
+For dashboard *write* operations (creating panels), the plugin uses an outbound Grafana token configured on the SLayer datasource itself — see *Grafana service-account token* in the datasource config page. The bundled demo works without one because anonymous Admin auth is enabled.
+
+Now your agent has *both* MCPs: it queries SLayer to figure out the right structure, then writes a Grafana panel that ships that query. End-to-end natural-language dashboards.
 
 ## How the plugin works
 
@@ -90,7 +117,7 @@ Three quality-of-life features the plugin adds on top of the raw REST call:
 - **Form + JSON query editor**. Common queries are built with a form (model, measures, dimensions, time dim + granularity, filters); the "JSON" toggle lets power users drop into the raw `SlayerQuery` for the full DSL.
 
 <p align="center">
-  <img src="docs/images/query-editor.jpg" alt="SLayer query editor in a Grafana panel — model, measures, dimensions, time dimension + granularity, filters, limit" width="800">
+  <img src="https://raw.githubusercontent.com/MotleyAI/grafana-slayer-datasource/main/docs/images/query-editor.jpg" alt="SLayer query editor in a Grafana panel — model, measures, dimensions, time dimension + granularity, filters, limit" width="800">
 </p>
 
 ### Multi-stage queries, one panel
@@ -100,7 +127,7 @@ Cohort analysis, period-over-period comparisons, queries-as-models — anything 
 The cohort retention table in the demo dashboard is built this way — one sub-query derives each customer's first-order month, another joins orders back and computes the month-since-cohort offset, the outer query counts active customers per `(cohort, period)`. Three composable SlayerQuery stages, one panel, the same DSL your AI agents use over MCP.
 
 <p align="center">
-  <img src="docs/images/cohort-editor.jpg" alt="Multi-stage query editor showing the cohort retention setup — outer aggregate plus two named sub-queries (customer_first, enriched) editable inline" width="800">
+  <img src="https://raw.githubusercontent.com/MotleyAI/grafana-slayer-datasource/main/docs/images/cohort-editor.jpg" alt="Multi-stage query editor showing the cohort retention setup — outer aggregate plus two named sub-queries (customer_first, enriched) editable inline" width="800">
 </p>
 
 ## Use it with your own database
