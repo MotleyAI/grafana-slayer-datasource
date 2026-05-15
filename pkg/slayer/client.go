@@ -107,7 +107,7 @@ func (c *Client) Query(ctx context.Context, q Query) (*Response, error) {
 	if err != nil {
 		return nil, fmt.Errorf("call slayer: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	raw, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, fmt.Errorf("read body: %w", err)
@@ -141,7 +141,7 @@ func (c *Client) Models(ctx context.Context) ([]ModelInfo, error) {
 	if err != nil {
 		return nil, fmt.Errorf("call slayer: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	raw, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, fmt.Errorf("read body: %w", err)
@@ -169,7 +169,7 @@ func (c *Client) Health(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("call slayer: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("slayer health %d", resp.StatusCode)
 	}

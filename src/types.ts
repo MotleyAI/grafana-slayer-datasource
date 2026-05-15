@@ -51,8 +51,18 @@ export const DEFAULT_QUERY: Partial<SlayerQuery> = {
 
 export interface SlayerOptions extends DataSourceJsonData {
   url?: string;
+  // Optional override for the Grafana URL the plugin uses when its in-process
+  // MCP server calls back into Grafana (defaults to http://localhost:3000 —
+  // the plugin runs as a Grafana subprocess so localhost is correct in the
+  // common case).
+  grafana_url?: string;
 }
 
 export interface SlayerSecureOptions {
+  // SLayer API key — forward-compat; SLayer ≤0.6.x has no auth.
   apiKey?: string;
+  // Grafana service-account token, used by the plugin's MCP CallResource for
+  // dashboard writes (POST /api/dashboards/db). Optional when Grafana is in
+  // anonymous-Admin mode (the bundled demo). Required in production.
+  grafanaToken?: string;
 }
