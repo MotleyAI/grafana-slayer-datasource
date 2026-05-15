@@ -38,6 +38,19 @@ First public beta of the SLayer data source plugin for Grafana.
 
 - SLayer's per-column `attributes.measures.<col>.format` (`{type, precision, symbol}`) now translates automatically into Grafana's `FieldConfig.Unit` + `FieldConfig.Decimals` on the returned frame. Mapping: `integer`/`float` → `short`, `percent` → `percent`, `currency` + symbol → `currencyUSD`/`EUR`/`GBP`/`JPY`/`RUB`/`INR`/`CHF` (unknowns fall back to `currencyUSD`). Panel-side `fieldConfig.defaults.unit` still overrides — Grafana's merge order is frame < panel defaults < overrides, so a dashboard that wants a specific unit can specify one and win.
 
+### Alerting
+
+- `plugin.json` declares `alerting: true`. SLayer-backed queries can now be the source of Grafana alert rules — the alert evaluator calls the same `QueryData` handler that powers panels, and our auto-injected `{__from}`/`{__to}` variables work the same way under the alerting scheduler.
+
+### Plugin-hosted MCP server
+
+- The plugin serves its own MCP **Streamable HTTP** transport through Grafana's `CallResource` path:
+  ```
+  http://<grafana>/api/datasources/uid/<slayer-ds>/resources/mcp
+  ```
+  Three tools: `list_dashboards`, `inspect_dashboard`, `add_panel_to_dashboard`. Each accepts a SlayerQuery (the same shape SLayer's MCP `query` tool produces), so the natural loop is: agent queries SLayer to iterate on the right query, then calls `add_panel_to_dashboard` to land it on a real dashboard. Grafana's own auth (session, service-account token, SSO) gates incoming MCP requests; the plugin uses a service-account token configured on the SLayer datasource (`secureJsonData.grafanaToken`) for outbound write calls. The bundled demo works without one because anonymous-Admin auth is enabled.
+- New package layout: `pkg/grafana` (REST client) + `pkg/mcp` (tool registration + panel construction), wired into the plugin's `CallResource` handler.
+
 ### Compatibility
 
 - Grafana 11.0+ (`grafanaDependency: ">=11.0.0"`).

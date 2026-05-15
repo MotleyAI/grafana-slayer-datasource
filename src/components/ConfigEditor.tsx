@@ -19,7 +19,7 @@ export function ConfigEditor(props: Props) {
   const onAPIKeyChange = (event: ChangeEvent<HTMLInputElement>) => {
     onOptionsChange({
       ...options,
-      secureJsonData: { apiKey: event.target.value },
+      secureJsonData: { ...(secureJsonData ?? {}), apiKey: event.target.value },
     });
   };
 
@@ -28,6 +28,28 @@ export function ConfigEditor(props: Props) {
       ...options,
       secureJsonFields: { ...(secureJsonFields ?? {}), apiKey: false },
       secureJsonData: { ...(secureJsonData ?? {}), apiKey: '' },
+    });
+  };
+
+  const onGrafanaURLChange = (event: ChangeEvent<HTMLInputElement>) => {
+    onOptionsChange({
+      ...options,
+      jsonData: { ...jsonData, grafana_url: event.target.value },
+    });
+  };
+
+  const onGrafanaTokenChange = (event: ChangeEvent<HTMLInputElement>) => {
+    onOptionsChange({
+      ...options,
+      secureJsonData: { ...(secureJsonData ?? {}), grafanaToken: event.target.value },
+    });
+  };
+
+  const onResetGrafanaToken = () => {
+    onOptionsChange({
+      ...options,
+      secureJsonFields: { ...(secureJsonFields ?? {}), grafanaToken: false },
+      secureJsonData: { ...(secureJsonData ?? {}), grafanaToken: '' },
     });
   };
 
@@ -59,6 +81,37 @@ export function ConfigEditor(props: Props) {
           width={50}
           onReset={onResetAPIKey}
           onChange={onAPIKeyChange}
+        />
+      </InlineField>
+
+      <h6 style={{ marginTop: 16 }}>Agent integration (MCP) — optional</h6>
+
+      <InlineField
+        label="Grafana URL"
+        labelWidth={20}
+        tooltip="URL the plugin's in-process MCP server uses when calling Grafana back (dashboard write API). Leave blank to default to http://localhost:3000."
+      >
+        <Input
+          id="config-editor-grafana-url"
+          value={jsonData.grafana_url ?? ''}
+          onChange={onGrafanaURLChange}
+          placeholder="http://localhost:3000"
+          width={50}
+        />
+      </InlineField>
+      <InlineField
+        label="Grafana token"
+        labelWidth={20}
+        tooltip="Grafana service-account token (https://grafana.com/docs/grafana/latest/administration/service-accounts/) used by the plugin's MCP CallResource for dashboard writes. Leave blank for the bundled demo — anonymous Admin / basic-auth env-vars cover it. Required in production."
+      >
+        <SecretInput
+          id="config-editor-grafana-token"
+          isConfigured={secureJsonFields?.grafanaToken}
+          value={secureJsonData?.grafanaToken ?? ''}
+          placeholder="glsa_…"
+          width={50}
+          onReset={onResetGrafanaToken}
+          onChange={onGrafanaTokenChange}
         />
       </InlineField>
     </FieldSet>

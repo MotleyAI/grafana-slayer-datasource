@@ -4,6 +4,7 @@
   "name": "SLayer",
   "id": "motley-slayer-datasource",
   "metrics": true,
+  "alerting": true,
   "backend": true,
   "executable": "gpx_slayer",
   "info": {

@@ -40,8 +40,8 @@ Treat it as the *"did I break anything?"* command. It does **not** run the produ
 |---|---|
 | Frontend (dev, watch) | `pnpm dev` |
 | Frontend (prod, one-shot) | `pnpm build` |
-| Backend (current platform) | `mage build:backend` |
-| Backend (cross-compile for Docker) | `mage build:linux build:linuxARM64` |
+| Backend plugin (current platform) | `mage build:backend` |
+| Backend plugin (cross-compile for Docker) | `mage build:linux build:linuxARM64` |
 
 ## Running
 
@@ -101,9 +101,11 @@ Wraps `docker compose -f docker-compose.dev.yaml up --build`. Builds the dev ima
 │   ├── module.ts            # Plugin entry — wires DS + Config + Query editors
 │   ├── plugin.json          # Plugin manifest
 │   └── types.ts             # SlayerQuery, SlayerOptions, ...
-├── pkg/                     # Go backend
+├── pkg/                     # Go backend (the Grafana plugin subprocess)
 │   ├── plugin/              # QueryData, CheckHealth, CallResource handlers
 │   ├── slayer/              # HTTP client for SLayer REST
+│   ├── grafana/             # HTTP client for Grafana REST (used by MCP tools)
+│   ├── mcp/                 # MCP tool registration + panel construction
 │   └── models/              # Plugin settings
 ├── provisioning/            # Auto-loaded datasource + demo dashboard
 ├── .config/                 # Grafana plugin tools build infra (do not modify)
@@ -172,7 +174,7 @@ Known gaps and likely follow-ups, roughly ordered:
 - **Model-name autocomplete in QueryEditor** — backend `/resources/models` exists; the editor still uses a free-text model input.
 - **Frontend unit tests** — zero coverage on `ConfigEditor` / `QueryEditor`.
 - **Grafana `Combobox` migration** — the deprecated `Select` component still works, but a future Grafana release will remove it.
-- **Plugin-hosted MCP for dashboard authoring** — new tools like `create_panel_from_slayer_query` would let agents build dashboards conversationally.
+- **More MCP authoring tools** — the current set (`list_dashboards`, `inspect_dashboard`, `add_panel_to_dashboard`) covers the common loop; deeper operations (panel edit/delete, layout, alert rule creation) are next.
 
 ## Contributing
 

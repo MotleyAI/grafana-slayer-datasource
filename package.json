@@ -75,5 +75,11 @@
     "react": "^18.3.0",
     "react-dom": "^18.3.0"
   },
-  "packageManager": "pnpm@10.14.0"
+  "packageManager": "pnpm@10.14.0",
+  "pnpm": {
+    "overrides": {
+      "immutable": "^5.1.5",
+      "serialize-javascript": "^7.0.5"
+    }
+  }
 }

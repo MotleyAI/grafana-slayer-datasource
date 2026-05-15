@@ -11,6 +11,10 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/instancemgmt"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
+	mcpserver "github.com/mark3labs/mcp-go/server"
+
+	"github.com/motleyai/grafana-slayer-datasource/pkg/grafana"
+	"github.com/motleyai/grafana-slayer-datasource/pkg/mcp"
 	"github.com/motleyai/grafana-slayer-datasource/pkg/models"
 	"github.com/motleyai/grafana-slayer-datasource/pkg/slayer"
 )
@@ -36,14 +40,37 @@ func NewDatasource(_ context.Context, settings backend.DataSourceInstanceSetting
 		return nil, err
 	}
 	return &Datasource{
-		client: slayer.NewClient(cfg.URL, cfg.Secrets.APIKey),
-		url:    cfg.URL,
+		client:  slayer.NewClient(cfg.URL, cfg.Secrets.APIKey),
+		url:     cfg.URL,
+		mcpHTTP: buildMCPHandler(cfg),
 	}, nil
 }
 
+// buildMCPHandler constructs the StreamableHTTP MCP server bound to a Grafana
+// REST client built from datasource settings. Auth is optional — when no
+// service-account token is configured, the client sends unauthenticated
+// requests, which the bundled demo's anonymous-Admin Grafana cheerfully
+// accepts. Real installs configure secureJsonData.grafanaToken on the
+// datasource.
+func buildMCPHandler(cfg *models.PluginSettings) mcpHTTPHandler {
+	gf := grafana.New(grafana.Config{
+		BaseURL: cfg.GrafanaURL,
+		Token:   cfg.Secrets.GrafanaToken,
+	})
+	mcpSrv := mcp.NewServer("slayer-grafana", "0.1.0", gf)
+	return mcpserver.NewStreamableHTTPServer(
+		mcpSrv,
+		// Mount at /mcp so the agent's attach URL matches Grafana's
+		// /api/datasources/uid/<uid>/resources/mcp path. mcp-go also responds
+		// to the spec's session endpoints under the same prefix.
+		mcpserver.WithEndpointPath("/mcp"),
+	)
+}
+
 type Datasource struct {
-	client slayerClient
-	url    string
+	client  slayerClient
+	url     string
+	mcpHTTP mcpHTTPHandler
 }
 
 func (d *Datasource) Dispose() {}
@@ -153,17 +180,21 @@ func (d *Datasource) CheckHealth(ctx context.Context, _ *backend.CheckHealthRequ
 
 // CallResource serves auxiliary endpoints the frontend hits via
 // /api/datasources/uid/<uid>/resources/<path>. Routes:
-//   - GET  /resources/models      → JSON list of SLayer models (dropdown autocomplete)
-//   - POST /resources/metric-find → run a SlayerQuery and project its first
-//                                   column into a MetricFindValue[] for template
-//                                   variable dropdowns.
+//   - GET  /resources/models             → JSON list of SLayer models (dropdown autocomplete)
+//   - POST /resources/metric-find        → run a SlayerQuery and project its first
+//                                          column into a MetricFindValue[] for template
+//                                          variable dropdowns.
+//   - {ANY} /resources/mcp[/...]         → MCP Streamable-HTTP transport for agents;
+//                                          authoritative attach URL for `claude mcp add`.
 func (d *Datasource) CallResource(ctx context.Context, req *backend.CallResourceRequest, sender backend.CallResourceResponseSender) error {
 	path := strings.Trim(req.Path, "/")
-	switch path {
-	case "models":
+	switch {
+	case path == "models":
 		return d.handleModels(ctx, sender)
-	case "metric-find":
+	case path == "metric-find":
 		return d.handleMetricFind(ctx, req, sender)
+	case path == "mcp" || strings.HasPrefix(path, "mcp/"):
+		return d.handleMCP(ctx, req, sender)
 	default:
 		return jsonStatus(sender, http.StatusNotFound, map[string]string{"error": fmt.Sprintf("unknown resource path: %q", path)})
 	}
