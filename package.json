@@ -1,6 +1,6 @@
 {
   "name": "grafana-slayer-datasource",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "scripts": {
     "build": "webpack -c ./.config/webpack/webpack.config.ts --env production",
     "dev": "webpack -w -c ./.config/webpack/webpack.config.ts --env development",
@@ -75,5 +75,11 @@
     "react": "^18.3.0",
     "react-dom": "^18.3.0"
   },
-  "packageManager": "pnpm@10.14.0"
+  "packageManager": "pnpm@10.14.0",
+  "pnpm": {
+    "overrides": {
+      "immutable": "^5.1.5",
+      "serialize-javascript": "^7.0.5"
+    }
+  }
 }

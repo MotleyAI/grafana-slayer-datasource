@@ -92,11 +92,22 @@ jobs:
           fi
 
       - name: Sign plugin
+        # Only sign on version-tag releases. Signing mutates remote state in
+        # Grafana's signing registry (each version can be signed exactly once),
+        # so running it on every push/PR — as the scaffolded workflow does —
+        # registers v0.1.0 on the first run and then 409s forever after.
+        # The real release path is .github/workflows/release.yml.
         run: pnpm run sign
-        if: ${{ env.GRAFANA_ACCESS_POLICY_TOKEN != '' }}
+        if: ${{ startsWith(github.ref, 'refs/tags/v') && env.GRAFANA_ACCESS_POLICY_TOKEN != '' }}
 
+      # Packaging tail — only fires when a downstream job actually needs the
+      # zipped bundle. Today that's just the Playwright e2e job (gated on
+      # has-e2e). For releases, .github/workflows/release.yml handles packaging
+      # + signing + validation independently via grafana/plugin-actions/build-plugin,
+      # so duplicating any of this here would be wasted compute.
       - name: Get plugin metadata
         id: metadata
+        if: steps.check-for-e2e.outputs.has-e2e == 'true'
         run: |
           sudo apt-get install jq
 
@@ -110,6 +121,7 @@ jobs:
 
       - name: Package plugin
         id: package-plugin
+        if: steps.check-for-e2e.outputs.has-e2e == 'true'
         run: |
           mv dist ${PLUGIN_ID}
           zip ${ARCHIVE} ${PLUGIN_ID} -r
@@ -118,6 +130,7 @@ jobs:
           PLUGIN_ID: ${{ steps.metadata.outputs.plugin-id }}
 
       - name: Check plugin.json
+        if: steps.check-for-e2e.outputs.has-e2e == 'true'
         run: |
           docker run --pull=always \
             -v $PWD/${ARCHIVE}:/archive.zip \
@@ -126,6 +139,7 @@ jobs:
           ARCHIVE: ${{ steps.metadata.outputs.archive }}
 
       - name: Archive Build
+        if: steps.check-for-e2e.outputs.has-e2e == 'true'
         uses: actions/upload-artifact@v7
         with:
           name: ${{ steps.metadata.outputs.plugin-id }}-${{ steps.metadata.outputs.plugin-version }}

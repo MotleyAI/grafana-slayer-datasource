@@ -64,7 +64,10 @@ ENV GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS=motley-slayer-datasource
 # Frontend artifacts (module.js, plugin.json, img/, copied LICENSE/README/CHANGELOG)
 COPY --from=frontend /build/dist /var/lib/grafana/plugins/motley-slayer-datasource
 
-# Backend binaries (both archs — Grafana picks the matching one at spawn time)
+# Backend binaries (both archs — Grafana picks the matching one at spawn time).
+# The plugin process also serves the MCP server in-process via Grafana's
+# CallResource path: /api/datasources/uid/<uid>/resources/mcp. No separate
+# binary or process required.
 COPY --from=backend /build/dist/gpx_slayer_linux_amd64 /var/lib/grafana/plugins/motley-slayer-datasource/
 COPY --from=backend /build/dist/gpx_slayer_linux_arm64 /var/lib/grafana/plugins/motley-slayer-datasource/
 COPY --from=backend /build/dist/go_plugin_build_manifest /var/lib/grafana/plugins/motley-slayer-datasource/
