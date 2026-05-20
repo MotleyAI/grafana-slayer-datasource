@@ -18,6 +18,13 @@ jobs:
   release:
     permissions:
       contents: write
+      # Required for build-plugin's attestation: 'true' below.
+      # `id-token: write` lets the runner request a short-lived OIDC token
+      # from GitHub which Sigstore uses to issue the keyless signature;
+      # `attestations: write` lets the action upload the .intoto.jsonl
+      # statement back to the GitHub attestations API.
+      id-token: write
+      attestations: write
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -40,3 +47,8 @@ jobs:
         with:
           go-version: '1.25.7'
           node-version: '22'
+          # Produce a Sigstore-signed GitHub attestation that links the
+          # published zip to this workflow + repo + commit. Verifiable with
+          # `gh attestation verify motley-slayer-datasource-<ver>.zip
+          #    --repo MotleyAI/grafana-slayer-datasource`.
+          attestation: 'true'
